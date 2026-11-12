@@ -19,12 +19,12 @@ task; do not mark a task complete while tests fail.
     `onChange` subscription.
   - _Requirements: 1.1, 1.2, 1.3, 1.4, 2.1, 2.2, 2.3, 2.4_
 
-- [ ] 3. Store unit tests
+- [x] 3. Store unit tests
   - Write `tests/store.test.js` covering CRUD, validation rejections (state
     untouched), persistence round-trip with fake storage, corrupt-data fallback.
   - _Requirements: 10.1_
 
-- [ ] 4. Seed data + import/export
+- [x] 4. Seed data + import/export
   - Implement `src/seed.js` (10 varied demo tasks) and store
     `importTasks`/`exportTasks` with strict validation (reject invalid files,
     keep current data).

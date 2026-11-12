@@ -15,6 +15,8 @@ import {
   ValidationError,
 } from '../src/store.js';
 
+import { seedTasks } from '../src/seed.js';
+
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
 function makeStore() {
@@ -441,5 +443,151 @@ describe('store.onChange', () => {
     unsub();
     store.createTask({ title: 'Second' });
     assert.equal(callCount, 1);
+  });
+});
+
+// ── getTask ───────────────────────────────────────────────────────────────────
+
+describe('store.getTask', () => {
+  it('returns the task for a known id', () => {
+    const store = makeStore();
+    const { id } = store.createTask({ title: 'Find me' });
+    const task = store.getTask(id);
+    assert.ok(task);
+    assert.equal(task.id, id);
+    assert.equal(task.title, 'Find me');
+  });
+
+  it('returns undefined for an unknown id', () => {
+    const store = makeStore();
+    assert.equal(store.getTask('no-such-id'), undefined);
+  });
+
+  it('returns undefined after the task has been deleted', () => {
+    const store = makeStore();
+    const { id } = store.createTask({ title: 'Gone' });
+    store.deleteTask(id);
+    assert.equal(store.getTask(id), undefined);
+  });
+});
+
+// ── importTasks (validation edge cases) ──────────────────────────────────────
+
+describe('store.importTasks (validation edge cases)', () => {
+  it('throws and preserves data when a task has an invalid status', () => {
+    const store = makeStore();
+    store.createTask({ title: 'Keep me' });
+    assert.throws(
+      () => store.importTasks([{ title: 'Bad', status: 'archived' }]),
+      ValidationError
+    );
+    assert.equal(store.listTasks().length, 1);
+    assert.equal(store.listTasks()[0].title, 'Keep me');
+  });
+
+  it('throws and preserves data when a task has an invalid priority', () => {
+    const store = makeStore();
+    store.createTask({ title: 'Keep me' });
+    assert.throws(
+      () => store.importTasks([{ title: 'Bad', priority: 'urgent' }]),
+      ValidationError
+    );
+    assert.equal(store.listTasks()[0].title, 'Keep me');
+  });
+
+  it('throws and preserves data when a task has an invalid dueDate', () => {
+    const store = makeStore();
+    store.createTask({ title: 'Keep me' });
+    assert.throws(
+      () => store.importTasks([{ title: 'Bad', dueDate: '12/31/2026' }]),
+      ValidationError
+    );
+    assert.equal(store.listTasks()[0].title, 'Keep me');
+  });
+});
+
+// ── createMemoryStorage ───────────────────────────────────────────────────────
+
+describe('createMemoryStorage', () => {
+  it('returns null for a key that was never set', () => {
+    const mem = createMemoryStorage();
+    assert.equal(mem.getItem('missing'), null);
+  });
+
+  it('round-trips a string value via setItem / getItem', () => {
+    const mem = createMemoryStorage();
+    mem.setItem('k', 'hello');
+    assert.equal(mem.getItem('k'), 'hello');
+  });
+
+  it('removes a key with removeItem', () => {
+    const mem = createMemoryStorage();
+    mem.setItem('k', 'v');
+    mem.removeItem('k');
+    assert.equal(mem.getItem('k'), null);
+  });
+
+  it('clears all keys with clear', () => {
+    const mem = createMemoryStorage();
+    mem.setItem('a', '1');
+    mem.setItem('b', '2');
+    mem.clear();
+    assert.equal(mem.getItem('a'), null);
+    assert.equal(mem.getItem('b'), null);
+  });
+});
+
+// ── seedTasks (src/seed.js) ───────────────────────────────────────────────────
+
+describe('seedTasks', () => {
+  it('returns exactly 10 tasks', () => {
+    assert.equal(seedTasks().length, 10);
+  });
+
+  it('every task has a non-empty title string', () => {
+    for (const t of seedTasks()) {
+      assert.ok(
+        typeof t.title === 'string' && t.title.trim().length > 0,
+        `expected non-empty title, got: ${JSON.stringify(t.title)}`
+      );
+    }
+  });
+
+  it('every task status is one of todo|doing|done', () => {
+    const valid = new Set(['todo', 'doing', 'done']);
+    for (const t of seedTasks()) {
+      assert.ok(valid.has(t.status), `unexpected status: ${t.status}`);
+    }
+  });
+
+  it('every task priority is one of low|medium|high', () => {
+    const valid = new Set(['low', 'medium', 'high']);
+    for (const t of seedTasks()) {
+      assert.ok(valid.has(t.priority), `unexpected priority: ${t.priority}`);
+    }
+  });
+
+  it('dueDate is null or a valid YYYY-MM-DD string on every task', () => {
+    const dateRe = /^\d{4}-\d{2}-\d{2}$/;
+    for (const t of seedTasks()) {
+      if (t.dueDate !== null) {
+        assert.match(t.dueDate, dateRe);
+      }
+    }
+  });
+
+  it('tags is an array of strings on every task', () => {
+    for (const t of seedTasks()) {
+      assert.ok(Array.isArray(t.tags));
+      for (const tag of t.tags) {
+        assert.equal(typeof tag, 'string');
+      }
+    }
+  });
+
+  it('all 10 tasks are importable by the store without errors', () => {
+    const store = makeStore();
+    assert.doesNotThrow(() => store.importTasks(seedTasks()));
+    assert.equal(store.listTasks().length, 10);
   });
 });
