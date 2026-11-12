@@ -51,7 +51,11 @@ function generateId() {
 function isValidISODate(date) {
   if (typeof date !== 'string') return false;
   if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return false;
-  const d = new Date(date + 'T00:00:00');
+  // Parse as UTC midnight so the round-trip is timezone-independent.
+  // Local midnight (no 'Z') shifts to previous day in UTC+ zones, breaking
+  // the slice(0,10) comparison (e.g. in UTC+7, 2026-11-12T00:00:00 local
+  // becomes 2026-11-11T17:00:00Z → toISOString returns "2026-11-11").
+  const d = new Date(date + 'T00:00:00Z');
   if (isNaN(d.getTime())) return false;
   // Round-trip check (catches Feb 30 etc.)
   return d.toISOString().slice(0, 10) === date;
