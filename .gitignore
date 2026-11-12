@@ -1,0 +1,4 @@
+# Dependencies / editor / OS — but NEVER .kiro (the rules forbid ignoring it)
+node_modules/
+.DS_Store
+*.log

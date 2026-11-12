@@ -1,0 +1,1 @@
+{"hooks":[{"action":{"command":"npm test","type":"command"},"description":"Run the full test suite whenever Kiro saves or edits a JS file, so the no-drift invariant is checked continuously.","matcher":"\\.(js|mjs)$","name":"Run tests on source save","timeout":120,"trigger":"PostFileSave"}],"version":"v1"}

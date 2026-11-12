@@ -1,0 +1,1 @@
+{"description":"One dataset, three incompatible faces: a spreadsheet, a kanban board and a calendar stitched into one local-first task manager.","devDependencies":{"fast-check":"^3.0.0"},"license":"MIT","name":"frankenboard","private":true,"scripts":{"serve":"python3 -m http.server 8000","test":"node --test tests/"},"type":"module","version":"0.1.0"}
