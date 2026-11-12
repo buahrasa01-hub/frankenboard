@@ -105,6 +105,11 @@ function applyFilters(tasks) {
  * Satisfies requirement 6.1: all views reflect the same task set after each
  * mutation because only the active view is rendered per switch; switching
  * always calls renderActiveView which reads live store data.
+ *
+ * The search/filter bar is a Sheet-only concern: Board columns ARE the status
+ * filter (showing all tasks sorted by status), and Calendar must show all
+ * tasks regardless of status/priority filters.  Only the Sheet view receives
+ * the filtered subset.
  */
 function renderActiveView() {
   const container = document.getElementById(`view-${currentView}`);
@@ -119,10 +124,13 @@ function renderActiveView() {
       renderSheet(container, filteredTasks, actions);
       break;
     case 'board':
-      renderBoard(container, filteredTasks, actions);
+      // Board always receives all tasks — columns ARE the status grouping
+      renderBoard(container, allTasks, actions);
       break;
     case 'calendar':
-      renderCalendar(container, filteredTasks, actions);
+      // Calendar always receives all tasks — the grid shows tasks by due date
+      // regardless of status or priority filters
+      renderCalendar(container, allTasks, actions);
       break;
   }
 }
@@ -233,6 +241,10 @@ export function openEditor(task = null) {
   panel.setAttribute('aria-hidden', 'false');
   overlay.classList.add('visible');
   overlay.setAttribute('aria-hidden', 'false');
+
+  // Show Delete button only when editing an existing task
+  const deleteBtn = document.getElementById('btn-editor-delete');
+  if (deleteBtn) deleteBtn.style.display = _editingId ? '' : 'none';
 
   // Auto-focus the title field
   setTimeout(() => document.getElementById('ed-title')?.focus(), 50);
@@ -388,14 +400,17 @@ document.getElementById('editor-panel').addEventListener('click', e => {
   if (t.id === 'btn-editor-delete') deleteEditing();
 });
 
-// Inject Save / Delete buttons into the editor footer (once, at startup)
+// Inject Save / Delete buttons into the editor footer (once, at startup).
+// The Delete button is hidden for new tasks (no _editingId) and shown/hidden
+// each time openEditor is called.
 (function injectEditorActions() {
   if (document.querySelector('.editor-actions')) return;
   const div = document.createElement('div');
   div.className = 'editor-actions';
   div.innerHTML = `
     <button class="action-btn"       id="btn-editor-save"   aria-label="Save task">Save</button>
-    <button class="action-btn btn-danger" id="btn-editor-delete" aria-label="Delete task">Delete</button>
+    <button class="action-btn btn-danger" id="btn-editor-delete" aria-label="Delete task"
+            style="display:none">Delete</button>
   `;
   document.getElementById('editor-panel').appendChild(div);
 })();

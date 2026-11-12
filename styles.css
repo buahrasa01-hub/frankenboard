@@ -969,13 +969,29 @@ body {
   }
 
   .app-shell {
-    grid-template-rows: auto var(--filter-bar-h) auto 1fr;
+    /* header & filter-bar rows use auto so wrapping content isn't clipped */
+    grid-template-rows: auto auto auto 1fr;
   }
 
   .tagline { display: none; }
 
   .header-actions {
     margin-left: 0;
+    width: 100%;
+  }
+
+  /* Filter bar: allow it to wrap on small screens without clipping */
+  .filter-bar {
+    flex-wrap: wrap;
+    height: auto;
+    min-height: var(--filter-bar-h);
+    padding-top: var(--sp-xs);
+    padding-bottom: var(--sp-xs);
+    gap: var(--sp-xs);
+  }
+
+  .search-input {
+    max-width: 100%;
     width: 100%;
   }
 
@@ -1007,7 +1023,8 @@ body {
 }
 
 @media (max-width: 400px) {
-  .view-btn span.label { display: none; }
+  .view-btn .label { display: none; }
+  .action-btn.secondary .label { display: none; }
 }
 
 /* ── Scrollbar styling ────────────────────────────────────────────────────── */
