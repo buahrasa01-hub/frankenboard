@@ -30,19 +30,19 @@ task; do not mark a task complete while tests fail.
     keep current data).
   - _Requirements: 7.1, 7.2, 7.3_
 
-- [ ] 5. Sheet view
+- [x] 5. Sheet view
   - Implement `src/views/sheet.js`: grid with Title/Status/Priority/Due
     date/Tags columns, inline cell editing, search filter, status/priority
     filters, column sorting (asc/desc toggle).
   - _Requirements: 3.1, 3.2, 3.3, 3.4, 3.5_
 
-- [ ] 6. Board view
+- [x] 6. Board view
   - Implement `src/views/board.js`: three columns (To do/Doing/Done), cards,
     HTML5 drag-and-drop between columns, empty-state messages, click-to-edit
     fallback.
   - _Requirements: 4.1, 4.2, 4.3, 4.4_
 
-- [ ] 7. Calendar view
+- [x] 7. Calendar view
   - Implement `src/views/calendar.js`: current-month grid, prev/next month
     navigation, tasks on due-date cells, drag between days, click empty day
     to create a task due that day, "Undated" strip for tasks without due dates.

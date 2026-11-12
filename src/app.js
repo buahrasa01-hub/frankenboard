@@ -9,6 +9,9 @@
  */
 
 import { createStore } from './store.js';
+import { render as renderSheet    } from './views/sheet.js';
+import { render as renderBoard    } from './views/board.js';
+import { render as renderCalendar } from './views/calendar.js';
 
 // ── Bootstrap ────────────────────────────────────────────────────────────────
 
@@ -144,6 +147,11 @@ export function registerView(name, renderFn) {
   if (name === 'calendar') _calendarRender = renderFn;
 }
 
+// Register the three view renderers (tasks 5-7)
+registerView('sheet',    renderSheet);
+registerView('board',    renderBoard);
+registerView('calendar', renderCalendar);
+
 // ── Actions passed to views ───────────────────────────────────────────────────
 
 function makeActions() {
@@ -162,13 +170,15 @@ function makeActions() {
 let _editingId = null;
 
 export function openEditor(task = null) {
-  _editingId = task ? task.id : null;
+  // A partial object (e.g. from calendar "click empty day") has no .id;
+  // treat it as a new-task with pre-filled fields.
+  _editingId = (task && task.id) ? task.id : null;
   const panel     = document.getElementById('editor-panel');
   const overlay   = document.getElementById('editor-overlay');
   const titleEl   = document.getElementById('editor-panel-title');
   const bodyEl    = document.getElementById('editor-body');
 
-  titleEl.textContent = task ? 'Edit task' : 'New task';
+  titleEl.textContent = _editingId ? 'Edit task' : 'New task';
 
   const t = task || {
     title: '', notes: '', status: 'todo', priority: 'medium',
@@ -212,7 +222,7 @@ export function openEditor(task = null) {
       <input class="field-input field-mono" id="ed-tags" type="text"
              value="${escHtml((t.tags || []).join(', '))}" placeholder="lab, haunt, potion" autocomplete="off" />
     </div>
-    ${task ? `
+    ${_editingId ? `
     <div style="font-size:0.72rem;color:var(--clr-text-dim);font-family:var(--font-mono);line-height:1.6">
       id: ${escHtml(t.id)}<br/>
       created: ${t.createdAt ? new Date(t.createdAt).toLocaleString() : '—'}<br/>
