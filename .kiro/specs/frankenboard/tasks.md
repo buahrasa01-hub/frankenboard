@@ -4,14 +4,14 @@ Tasks are executed by Kiro CLI from this spec. Each task references the
 requirements it satisfies. Run the full test suite (`npm test`) after every
 task; do not mark a task complete while tests fail.
 
-- [ ] 1. Project scaffolding
+- [x] 1. Project scaffolding
   - Create `index.html` (header, view switcher, search/filter bar, three view
     containers, editor panel container, `<noscript>` message), `styles.css`
     (stitched-monster design system per steering/tech.md), `src/app.js` stub
     that renders an empty state.
   - _Requirements: 9.1, 9.2, 9.3_
 
-- [ ] 2. Task store core
+- [x] 2. Task store core
   - Implement `src/store.js`: `createStore` with CRUD (`createTask`,
     `updateTask`, `deleteTask`), `moveTask`, `setDueDate`, validation
     (`ValidationError` on bad status/priority/date/tags), `localStorage`

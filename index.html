@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Frankenboard ⚡ One dataset, three faces</title>
+  <link rel="stylesheet" href="styles.css" />
+  <noscript>
+    <style>
+      .app-shell { display: none; }
+      .noscript-msg { display: flex !important; }
+    </style>
+  </noscript>
+</head>
+<body>
+  <!-- Noscript fallback: shown only when JS is disabled -->
+  <div class="noscript-msg" role="alert" aria-live="assertive">
+    <div class="noscript-inner">
+      <span class="bolt" aria-hidden="true">⚡</span>
+      <h1>JavaScript Required</h1>
+      <p>
+        Frankenboard is a client-side app that stores your tasks locally.
+        It needs JavaScript to run. Please enable JavaScript in your browser
+        and reload the page.
+      </p>
+      <span class="bolt" aria-hidden="true">⚡</span>
+    </div>
+  </div>
+
+  <!-- Main app shell (hidden via JS-driven class until ready) -->
+  <div class="app-shell" id="app-shell">
+
+    <!-- ══ HEADER ══════════════════════════════════════════════════════════ -->
+    <header class="app-header" role="banner">
+      <div class="header-brand">
+        <span class="bolt" aria-hidden="true">⚡</span>
+        <h1 class="app-title">Frankenboard</h1>
+        <span class="tagline">one dataset · three faces</span>
+      </div>
+
+      <!-- View switcher: keyboard shortcuts 1/2/3 -->
+      <nav class="view-switcher" role="navigation" aria-label="View switcher">
+        <button
+          class="view-btn active"
+          id="btn-view-sheet"
+          data-view="sheet"
+          aria-pressed="true"
+          aria-label="Sheet view (shortcut: 1)"
+          title="Sheet view [1]"
+        >📋 Sheet</button>
+        <button
+          class="view-btn"
+          id="btn-view-board"
+          data-view="board"
+          aria-pressed="false"
+          aria-label="Board view (shortcut: 2)"
+          title="Board view [2]"
+        >🧩 Board</button>
+        <button
+          class="view-btn"
+          id="btn-view-calendar"
+          data-view="calendar"
+          aria-pressed="false"
+          aria-label="Calendar view (shortcut: 3)"
+          title="Calendar view [3]"
+        >🗓 Calendar</button>
+      </nav>
+
+      <!-- Action buttons -->
+      <div class="header-actions">
+        <button
+          class="action-btn"
+          id="btn-new-task"
+          aria-label="New task (shortcut: n)"
+          title="New task [n]"
+        >✕ New task</button>
+        <button
+          class="action-btn secondary"
+          id="btn-seed"
+          aria-label="Load demo data"
+          title="Load demo data"
+        >🧪 Demo</button>
+        <button
+          class="action-btn secondary"
+          id="btn-export"
+          aria-label="Export tasks as JSON"
+          title="Export JSON"
+        >⬇ Export</button>
+        <label
+          class="action-btn secondary"
+          id="btn-import-label"
+          aria-label="Import tasks from JSON file"
+          title="Import JSON"
+          tabindex="0"
+          role="button"
+          onkeydown="if(event.key==='Enter'||event.key===' ')document.getElementById('input-import').click()"
+        >
+          ⬆ Import
+          <input
+            type="file"
+            id="input-import"
+            accept=".json,application/json"
+            aria-label="Choose JSON file to import"
+            class="visually-hidden"
+          />
+        </label>
+      </div>
+    </header>
+
+    <!-- ══ FILTER / SEARCH BAR ════════════════════════════════════════════ -->
+    <div class="filter-bar" role="search" aria-label="Filter and search tasks">
+      <input
+        type="search"
+        id="search-input"
+        class="search-input"
+        placeholder="Search tasks… [/]"
+        aria-label="Search tasks by title, notes, or tags"
+        autocomplete="off"
+        spellcheck="false"
+      />
+      <label class="filter-label" for="filter-status">Status</label>
+      <select id="filter-status" class="filter-select" aria-label="Filter by status">
+        <option value="">All</option>
+        <option value="todo">To do</option>
+        <option value="doing">Doing</option>
+        <option value="done">Done</option>
+      </select>
+      <label class="filter-label" for="filter-priority">Priority</label>
+      <select id="filter-priority" class="filter-select" aria-label="Filter by priority">
+        <option value="">All</option>
+        <option value="high">High</option>
+        <option value="medium">Medium</option>
+        <option value="low">Low</option>
+      </select>
+      <button
+        class="action-btn secondary small"
+        id="btn-clear-filters"
+        aria-label="Clear all filters"
+        title="Clear filters"
+      >✕ Clear</button>
+    </div>
+
+    <!-- ══ STATUS / TOAST MESSAGE ════════════════════════════════════════= -->
+    <div
+      id="toast"
+      class="toast"
+      role="status"
+      aria-live="polite"
+      aria-atomic="true"
+      aria-hidden="true"
+    ></div>
+
+    <!-- ══ VIEW CONTAINERS ════════════════════════════════════════════════ -->
+    <main class="view-host" id="view-host" role="main">
+
+      <!-- Sheet view -->
+      <section
+        class="view-container active"
+        id="view-sheet"
+        aria-label="Sheet view"
+      >
+        <!-- Rendered by src/views/sheet.js -->
+      </section>
+
+      <!-- Board view -->
+      <section
+        class="view-container"
+        id="view-board"
+        aria-label="Board view"
+        aria-hidden="true"
+      >
+        <!-- Rendered by src/views/board.js -->
+      </section>
+
+      <!-- Calendar view -->
+      <section
+        class="view-container"
+        id="view-calendar"
+        aria-label="Calendar view"
+        aria-hidden="true"
+      >
+        <!-- Rendered by src/views/calendar.js -->
+      </section>
+
+    </main>
+
+    <!-- ══ EDITOR PANEL ══════════════════════════════════════════════════= -->
+    <aside
+      class="editor-panel"
+      id="editor-panel"
+      aria-label="Task editor"
+      aria-hidden="true"
+      role="complementary"
+    >
+      <div class="editor-header">
+        <span class="bolt" aria-hidden="true">⚡</span>
+        <h2 class="editor-title" id="editor-panel-title">Edit task</h2>
+        <button
+          class="close-btn"
+          id="btn-close-editor"
+          aria-label="Close editor panel"
+          title="Close [Escape]"
+        >✕</button>
+      </div>
+      <div class="editor-body" id="editor-body">
+        <!-- Rendered by src/app.js -->
+      </div>
+    </aside>
+
+    <!-- Overlay for editor panel on small screens -->
+    <div class="editor-overlay" id="editor-overlay" aria-hidden="true"></div>
+
+  </div><!-- /.app-shell -->
+
+  <!-- Load app as ES module -->
+  <script type="module" src="src/app.js"></script>
+</body>
+</html>
