@@ -527,7 +527,21 @@ body {
   gap: var(--sp-s);
   padding: var(--sp-s) var(--sp-m);
   border-bottom: var(--stitch);
+  position: relative;
 }
+
+/* Bolt / rivet decoration on each column header */
+.board-column-header::before {
+  content: "●";
+  font-size: 0.55rem;
+  color: var(--clr-border);
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+.board-column[data-status="todo"]  .board-column-header::before { color: var(--clr-purple-dim); }
+.board-column[data-status="doing"] .board-column-header::before { color: var(--clr-orange-dim); }
+.board-column[data-status="done"]  .board-column-header::before { color: var(--clr-done); }
 
 .board-column-title {
   font-size: 0.85rem;
@@ -582,6 +596,15 @@ body {
   opacity: 0.5;
   cursor: grabbing;
 }
+
+/* Priority left-border accent (the "stitched seam") */
+.board-column[data-status="todo"]  .board-card { border-left-color: var(--clr-purple-dim); }
+.board-column[data-status="doing"] .board-card { border-left-color: var(--clr-orange-dim); }
+.board-column[data-status="done"]  .board-card {
+  opacity: 0.65;
+  border-left-color: var(--clr-done);
+}
+.board-column[data-status="done"] .board-card:hover { opacity: 0.85; }
 
 .board-card-title {
   font-size: 0.85rem;
@@ -724,6 +747,17 @@ body {
   text-transform: uppercase;
   letter-spacing: 0.05em;
   margin-bottom: var(--sp-xs);
+  display: flex;
+  align-items: center;
+  gap: var(--sp-xs);
+}
+
+/* Bolt rivet on undated strip */
+.undated-strip-title::before {
+  content: "●";
+  font-size: 0.55rem;
+  color: var(--clr-purple-dim);
+  line-height: 1;
 }
 
 .undated-chips {
