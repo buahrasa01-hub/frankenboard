@@ -1,11 +1,9 @@
 /**
  * src/app.js
- * Frankenboard — wiring, view switching, shortcuts, seed/import/export,
- * and the editor panel.
+ * Frankenboard — app wiring: view switching, onChange re-render, editor panel,
+ * keyboard shortcuts (n / / 1 2 3), seed / import / export.
  *
- * Tasks 1 (stub) → Task 8 (full implementation).
- * For now this file bootstraps the shell, subscribes to the store, and
- * renders a placeholder until the view modules are wired in task 8.
+ * Requirements: 6.1, 6.3, 8.1, 8.2, 8.3, 8.4
  */
 
 import { createStore } from './store.js';
@@ -17,11 +15,13 @@ import { render as renderCalendar } from './views/calendar.js';
 
 const store = createStore('frankenboard.v1');
 
-// Make the app shell visible (hides noscript fallback via CSS rules already set)
+// Reveal the app shell (noscript fallback is already hidden by the <noscript>
+// block in index.html; this sets an explicit grid layout).
 document.getElementById('app-shell').style.display = 'grid';
 
 // ── State ────────────────────────────────────────────────────────────────────
 
+/** @type {'sheet'|'board'|'calendar'} */
 let currentView = 'sheet';
 
 // ── Toast helper ─────────────────────────────────────────────────────────────
@@ -29,7 +29,7 @@ let currentView = 'sheet';
 let _toastTimer = null;
 
 /**
- * Show a brief status message.
+ * Show a brief status message in the toast bar.
  * @param {string} msg
  * @param {'info'|'success'|'error'} [type='info']
  */
@@ -48,19 +48,20 @@ export function showToast(msg, type = 'info') {
 // ── View switching ────────────────────────────────────────────────────────────
 
 /**
+ * Switch to the named view, update button states, and re-render.
  * @param {'sheet'|'board'|'calendar'} view
  */
 function switchView(view) {
   currentView = view;
 
-  // Update buttons
+  // Update view-switcher button aria/active state
   document.querySelectorAll('.view-btn').forEach(btn => {
     const active = btn.dataset.view === view;
     btn.classList.toggle('active', active);
     btn.setAttribute('aria-pressed', String(active));
   });
 
-  // Show / hide containers
+  // Show the matching container; hide the others
   document.querySelectorAll('.view-container').forEach(el => {
     const active = el.id === `view-${view}`;
     el.classList.toggle('active', active);
@@ -70,7 +71,7 @@ function switchView(view) {
   renderActiveView();
 }
 
-// ── Render ────────────────────────────────────────────────────────────────────
+// ── Filter helpers ────────────────────────────────────────────────────────────
 
 function getFilters() {
   return {
@@ -86,74 +87,53 @@ function applyFilters(tasks) {
     if (status   && t.status   !== status)   return false;
     if (priority && t.priority !== priority) return false;
     if (search) {
-      const q = search.toLowerCase();
+      const q      = search.toLowerCase();
       const inTitle = t.title.toLowerCase().includes(q);
-      const inNotes = (t.notes || '').toLowerCase().includes(q);
-      const inTags  = (t.tags  || []).some(tag => tag.toLowerCase().includes(q));
+      const inNotes = (t.notes  || '').toLowerCase().includes(q);
+      const inTags  = (t.tags   || []).some(tag => tag.toLowerCase().includes(q));
       if (!inTitle && !inNotes && !inTags) return false;
     }
     return true;
   });
 }
 
+// ── Render ────────────────────────────────────────────────────────────────────
+
+/**
+ * Re-render the currently active view.
+ * Called by the store's onChange subscription and after any state change.
+ * Satisfies requirement 6.1: all views reflect the same task set after each
+ * mutation because only the active view is rendered per switch; switching
+ * always calls renderActiveView which reads live store data.
+ */
 function renderActiveView() {
   const container = document.getElementById(`view-${currentView}`);
   if (!container) return;
 
-  const allTasks     = store.listTasks();
+  const allTasks      = store.listTasks();
   const filteredTasks = applyFilters(allTasks);
+  const actions       = makeActions();
 
-  // Views are dynamically imported once available; for now render placeholder
-  // (views will be injected in task 5-7 and fully wired in task 8)
-  if (currentView === 'sheet' && _sheetRender) {
-    _sheetRender(container, filteredTasks, makeActions());
-  } else if (currentView === 'board' && _boardRender) {
-    _boardRender(container, filteredTasks, makeActions());
-  } else if (currentView === 'calendar' && _calendarRender) {
-    _calendarRender(container, filteredTasks, makeActions());
-  } else {
-    renderPlaceholder(container, currentView, filteredTasks.length);
+  switch (currentView) {
+    case 'sheet':
+      renderSheet(container, filteredTasks, actions);
+      break;
+    case 'board':
+      renderBoard(container, filteredTasks, actions);
+      break;
+    case 'calendar':
+      renderCalendar(container, filteredTasks, actions);
+      break;
   }
 }
 
-function renderPlaceholder(container, view, count) {
-  container.innerHTML = `
-    <div class="empty-state">
-      <div class="empty-state-icon">🧪</div>
-      <div class="empty-state-msg">
-        <strong style="color:var(--clr-green)">${capitalise(view)} view</strong>
-        — coming soon (task ${view === 'sheet' ? 5 : view === 'board' ? 6 : 7})
-      </div>
-      <div style="font-size:0.75rem;color:var(--clr-text-dim);font-family:var(--font-mono)">
-        ${count} task${count !== 1 ? 's' : ''} in store
-      </div>
-    </div>
-  `;
-}
-
-function capitalise(s) {
-  return s.charAt(0).toUpperCase() + s.slice(1);
-}
-
-// Pluggable view renderers (set by view modules once implemented)
-let _sheetRender    = null;
-let _boardRender    = null;
-let _calendarRender = null;
-
-/** Allow view modules to register themselves (used in tasks 5-7). */
-export function registerView(name, renderFn) {
-  if (name === 'sheet')    _sheetRender    = renderFn;
-  if (name === 'board')    _boardRender    = renderFn;
-  if (name === 'calendar') _calendarRender = renderFn;
-}
-
-// Register the three view renderers (tasks 5-7)
-registerView('sheet',    renderSheet);
-registerView('board',    renderBoard);
-registerView('calendar', renderCalendar);
-
 // ── Actions passed to views ───────────────────────────────────────────────────
 
+/**
+ * Build the actions object given to each view render call.
+ * Views call these to mutate the store; they never import the store directly.
+ * @returns {object}
+ */
 function makeActions() {
   return {
     updateTask:  (id, patch)  => { store.updateTask(id, patch);  },
@@ -167,22 +147,35 @@ function makeActions() {
 
 // ── Editor panel ─────────────────────────────────────────────────────────────
 
+/** Id of the task currently being edited, or null for new-task mode. */
 let _editingId = null;
 
+/**
+ * Open the editor panel.
+ * Pass a full task object to edit an existing task.
+ * Pass a partial object (e.g. { dueDate }) to pre-fill a new task.
+ * Pass null / nothing to open a blank new-task form.
+ *
+ * Satisfies requirement 8.4: clicking a task in any view opens the editor.
+ * Satisfies requirement 8.1: pressing n opens the editor for a new task.
+ *
+ * @param {object|null} [task]
+ */
 export function openEditor(task = null) {
-  // A partial object (e.g. from calendar "click empty day") has no .id;
-  // treat it as a new-task with pre-filled fields.
+  // A partial object (from calendar "click empty day") has no .id;
+  // treat it as a new task with pre-filled fields.
   _editingId = (task && task.id) ? task.id : null;
-  const panel     = document.getElementById('editor-panel');
-  const overlay   = document.getElementById('editor-overlay');
-  const titleEl   = document.getElementById('editor-panel-title');
-  const bodyEl    = document.getElementById('editor-body');
+
+  const panel   = document.getElementById('editor-panel');
+  const overlay = document.getElementById('editor-overlay');
+  const titleEl = document.getElementById('editor-panel-title');
+  const bodyEl  = document.getElementById('editor-body');
 
   titleEl.textContent = _editingId ? 'Edit task' : 'New task';
 
   const t = task || {
     title: '', notes: '', status: 'todo', priority: 'medium',
-    dueDate: null, tags: []
+    dueDate: null, tags: [],
   };
 
   bodyEl.innerHTML = `
@@ -194,7 +187,8 @@ export function openEditor(task = null) {
     </div>
     <div class="field-group">
       <label class="field-label" for="ed-notes">Notes</label>
-      <textarea class="field-textarea" id="ed-notes" placeholder="Optional notes…">${escHtml(t.notes || '')}</textarea>
+      <textarea class="field-textarea" id="ed-notes"
+                placeholder="Optional notes…">${escHtml(t.notes || '')}</textarea>
     </div>
     <div class="field-group">
       <label class="field-label" for="ed-status">Status</label>
@@ -218,12 +212,16 @@ export function openEditor(task = null) {
              value="${t.dueDate || ''}" />
     </div>
     <div class="field-group">
-      <label class="field-label" for="ed-tags">Tags <span style="color:var(--clr-text-dim)">(comma-separated)</span></label>
+      <label class="field-label" for="ed-tags">
+        Tags
+        <span style="color:var(--clr-text-dim)">(comma-separated)</span>
+      </label>
       <input class="field-input field-mono" id="ed-tags" type="text"
-             value="${escHtml((t.tags || []).join(', '))}" placeholder="lab, haunt, potion" autocomplete="off" />
+             value="${escHtml((t.tags || []).join(', '))}"
+             placeholder="lab, haunt, potion" autocomplete="off" />
     </div>
     ${_editingId ? `
-    <div style="font-size:0.72rem;color:var(--clr-text-dim);font-family:var(--font-mono);line-height:1.6">
+    <div class="field-meta">
       id: ${escHtml(t.id)}<br/>
       created: ${t.createdAt ? new Date(t.createdAt).toLocaleString() : '—'}<br/>
       updated: ${t.updatedAt ? new Date(t.updatedAt).toLocaleString() : '—'}
@@ -236,10 +234,13 @@ export function openEditor(task = null) {
   overlay.classList.add('visible');
   overlay.setAttribute('aria-hidden', 'false');
 
-  // Focus title
+  // Auto-focus the title field
   setTimeout(() => document.getElementById('ed-title')?.focus(), 50);
 }
 
+/**
+ * Close the editor panel without saving.
+ */
 export function closeEditor() {
   _editingId = null;
   const panel   = document.getElementById('editor-panel');
@@ -250,6 +251,7 @@ export function closeEditor() {
   overlay.setAttribute('aria-hidden', 'true');
 }
 
+/** Collect all field values from the editor form. */
 function collectEditorData() {
   const title    = document.getElementById('ed-title')?.value.trim() || '';
   const notes    = document.getElementById('ed-notes')?.value.trim() || '';
@@ -265,10 +267,11 @@ function collectEditorData() {
   return { title, notes, status, priority, dueDate, tags };
 }
 
+/** Validate, persist, and close the editor. */
 function saveEditor() {
-  const data = collectEditorData();
-  const errEl = document.getElementById('ed-title-err');
-  const globalErr = document.getElementById('ed-global-err');
+  const data     = collectEditorData();
+  const errEl    = document.getElementById('ed-title-err');
+  const globalEl = document.getElementById('ed-global-err');
 
   if (!data.title) {
     if (errEl) errEl.textContent = 'Title is required.';
@@ -285,10 +288,11 @@ function saveEditor() {
     }
     closeEditor();
   } catch (err) {
-    if (globalErr) globalErr.textContent = err.message || String(err);
+    if (globalEl) globalEl.textContent = err.message || String(err);
   }
 }
 
+/** Delete the currently-edited task (after confirmation). */
 function deleteEditing() {
   if (!_editingId) return;
   if (!confirm('Delete this task? This cannot be undone.')) return;
@@ -305,7 +309,7 @@ function handleExport() {
     const url  = URL.createObjectURL(blob);
     const a    = document.createElement('a');
     a.href     = url;
-    a.download = `frankenboard-${isoDate()}.json`;
+    a.download = `frankenboard-${isoDateStr()}.json`;
     a.click();
     URL.revokeObjectURL(url);
     showToast('Tasks exported ✓', 'success');
@@ -320,20 +324,23 @@ function handleImport(file) {
   reader.onload = (e) => {
     try {
       const raw = JSON.parse(e.target.result);
-      const arr = Array.isArray(raw) ? raw : (raw && Array.isArray(raw.tasks) ? raw.tasks : null);
+      // Accept both a plain array and the {version, tasks} envelope
+      const arr = Array.isArray(raw)
+        ? raw
+        : (raw && Array.isArray(raw.tasks) ? raw.tasks : null);
       if (!arr) throw new Error('File must contain a JSON array of tasks.');
       store.importTasks(arr);
       showToast(`Imported ${arr.length} task${arr.length !== 1 ? 's' : ''} ✓`, 'success');
     } catch (err) {
       showToast(`Import failed: ${err.message}`, 'error');
     }
-    // reset file input so the same file can be re-imported
+    // Reset so the same file can be re-imported if needed
     document.getElementById('input-import').value = '';
   };
   reader.readAsText(file);
 }
 
-function isoDate() {
+function isoDateStr() {
   return new Date().toISOString().slice(0, 10);
 }
 
@@ -350,7 +357,7 @@ async function handleSeed() {
   }
 }
 
-// ── Event wiring ──────────────────────────────────────────────────────────────
+// ── Utilities ─────────────────────────────────────────────────────────────────
 
 function escHtml(str) {
   return String(str)
@@ -360,78 +367,86 @@ function escHtml(str) {
     .replace(/"/g, '&quot;');
 }
 
-// View buttons
+// ── Event wiring ──────────────────────────────────────────────────────────────
+
+// View-switcher buttons (1 / 2 / 3 shortcuts via keydown below)
 document.querySelectorAll('.view-btn').forEach(btn => {
   btn.addEventListener('click', () => switchView(btn.dataset.view));
 });
 
-// New task
+// New task button  (shortcut: n)
 document.getElementById('btn-new-task').addEventListener('click', () => openEditor());
 
-// Close editor
+// Editor: close via X button or overlay click
 document.getElementById('btn-close-editor').addEventListener('click', closeEditor);
 document.getElementById('editor-overlay').addEventListener('click', closeEditor);
 
-// Editor save / delete (delegated, since body is re-rendered)
+// Editor: Save / Delete (delegated — body innerHTML is rebuilt on each open)
 document.getElementById('editor-panel').addEventListener('click', e => {
   const t = e.target;
   if (t.id === 'btn-editor-save')   saveEditor();
   if (t.id === 'btn-editor-delete') deleteEditing();
 });
 
-// Inject Save / Delete buttons into editor actions (once)
+// Inject Save / Delete buttons into the editor footer (once, at startup)
 (function injectEditorActions() {
-  const existing = document.querySelector('.editor-actions');
-  if (existing) return;
-  const actionsDiv = document.createElement('div');
-  actionsDiv.className = 'editor-actions';
-  actionsDiv.innerHTML = `
-    <button class="action-btn" id="btn-editor-save" aria-label="Save task">Save</button>
+  if (document.querySelector('.editor-actions')) return;
+  const div = document.createElement('div');
+  div.className = 'editor-actions';
+  div.innerHTML = `
+    <button class="action-btn"       id="btn-editor-save"   aria-label="Save task">Save</button>
     <button class="action-btn btn-danger" id="btn-editor-delete" aria-label="Delete task">Delete</button>
   `;
-  document.getElementById('editor-panel').appendChild(actionsDiv);
+  document.getElementById('editor-panel').appendChild(div);
 })();
 
-// Seed / export / import
+// Seed / export / import buttons
 document.getElementById('btn-seed').addEventListener('click', handleSeed);
 document.getElementById('btn-export').addEventListener('click', handleExport);
 document.getElementById('input-import').addEventListener('change', e => {
   handleImport(e.target.files[0]);
 });
 
-// Filters
-document.getElementById('search-input').addEventListener('input', renderActiveView);
-document.getElementById('filter-status').addEventListener('change', renderActiveView);
+// Filter bar → re-render on change
+document.getElementById('search-input').addEventListener('input',    renderActiveView);
+document.getElementById('filter-status').addEventListener('change',  renderActiveView);
 document.getElementById('filter-priority').addEventListener('change', renderActiveView);
 document.getElementById('btn-clear-filters').addEventListener('click', () => {
-  document.getElementById('search-input').value = '';
+  document.getElementById('search-input').value  = '';
   document.getElementById('filter-status').value = '';
   document.getElementById('filter-priority').value = '';
   renderActiveView();
 });
 
-// Keyboard shortcuts
+// ── Keyboard shortcuts ────────────────────────────────────────────────────────
+// Requirement 8.1: n  → new task
+// Requirement 8.2: /  → focus search box
+// Requirement 8.3: 1/2/3 → switch view
+// Escape → close editor (also when typing in editor fields)
+
 document.addEventListener('keydown', e => {
-  // Ignore shortcuts when typing in inputs
-  const tag = document.activeElement?.tagName;
+  const tag     = document.activeElement?.tagName;
   const inInput = tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT'
     || document.activeElement?.isContentEditable;
 
+  // Escape closes the editor from any context
   if (e.key === 'Escape') {
     closeEditor();
     return;
   }
 
-  if (!inInput) {
-    if (e.key === 'n') { e.preventDefault(); openEditor(); }
-    if (e.key === '/') { e.preventDefault(); document.getElementById('search-input').focus(); }
-    if (e.key === '1') switchView('sheet');
-    if (e.key === '2') switchView('board');
-    if (e.key === '3') switchView('calendar');
-  }
+  // All other shortcuts are suppressed while typing
+  if (inInput) return;
+
+  if (e.key === 'n') { e.preventDefault(); openEditor(); }
+  if (e.key === '/') { e.preventDefault(); document.getElementById('search-input').focus(); }
+  if (e.key === '1') switchView('sheet');
+  if (e.key === '2') switchView('board');
+  if (e.key === '3') switchView('calendar');
 });
 
 // ── Store subscription ────────────────────────────────────────────────────────
+// Requirement 6.1: re-render after every mutation so all views stay in sync.
 
 store.onChange(renderActiveView);
 

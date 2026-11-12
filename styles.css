@@ -940,6 +940,16 @@ body {
   font-family: var(--font-mono);
 }
 
+/* ── Task meta (id / created / updated) in editor ─────────────────────────*/
+.field-meta {
+  font-size: 0.72rem;
+  color: var(--clr-text-dim);
+  font-family: var(--font-mono);
+  line-height: 1.6;
+  border-top: 1px dashed var(--clr-panel-raised);
+  padding-top: var(--sp-xs);
+}
+
 /* ═══════════════════════════════════════════════════════════════════════════
    RESPONSIVE — phone width
    ═══════════════════════════════════════════════════════════════════════════ */

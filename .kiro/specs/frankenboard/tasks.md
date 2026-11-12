@@ -48,7 +48,7 @@ task; do not mark a task complete while tests fail.
     to create a task due that day, "Undated" strip for tasks without due dates.
   - _Requirements: 5.1, 5.2, 5.3, 5.4, 5.5_
 
-- [ ] 8. App wiring: view switching, editor panel, shortcuts
+- [x] 8. App wiring: view switching, editor panel, shortcuts
   - Implement `src/app.js`: view switcher (Sheet/Board/Calendar), `onChange`
     re-render, editor panel with all task fields, keyboard shortcuts (`n` new,
     `/` search, `1/2/3` views), seed/import/export buttons.
