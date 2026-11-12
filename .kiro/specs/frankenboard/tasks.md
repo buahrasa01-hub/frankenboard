@@ -54,7 +54,7 @@ task; do not mark a task complete while tests fail.
     `/` search, `1/2/3` views), seed/import/export buttons.
   - _Requirements: 6.1, 6.3, 8.1, 8.2, 8.3, 8.4_
 
-- [ ] 9. Property-based tests for the no-drift invariant
+- [x] 9. Property-based tests for the no-drift invariant
   - Write `tests/store.property.test.js` with fast-check: random sequences of
     create/update/move/delete/setDueDate asserting count conservation, unique
     ids, valid statuses, and view-projection equality with the store.
